@@ -14,6 +14,11 @@ app = {
     'force_canonical': False
 }
 
+token = {
+    'algorithm': 'HS256',
+    'secret': '3598ECD3-6FBE-443A-B8E3-8D5E548F0608'
+}
+
 db = {
     'path': '%(confdir)s/db'
 }

@@ -1,34 +1,48 @@
-from pecan import conf
-
-import tinydb
+import time
 import threading
 
 
-db = tinydb.TinyDB(conf.db.path, create_dirs=True)
-lock = threading.Lock()
+class TTLCache:
+    def __init__(self, ttl=120):
+        self.cache = {}
+        self.ttl = ttl
+        self.lock = threading.Lock()
 
-def store(json, table='_default'):
-    with lock:
-        doc_id = db.table(table).insert(json)
-        return doc_id
+    def set(self, key, payload):
+        with self.lock:
 
+            self.cache[key] = payload
 
-def get(doc_id, table='_default'):
-    with lock:
-        return db.table(table).get(doc_id=doc_id)
+            def expire():
+                time.sleep(self.ttl)
+                with self.lock:
+                    del self.cache[key]
 
+            threading.Thread(target=expire).start()
 
-def find(table='_default', **kw):
-    Query = tinydb.Query()
-    conditions = [
-        getattr(Query, key) == val
-        for key, val in kw.items()
-    ]
-    condition = conditions.pop()
-    for c in conditions:
-        condition = condition & c
-    return db.table(table).search(condition)
+    def get(self, key):
+        with self.lock:
+            return self.cache.get(key)
 
 
-def delete(doc_id, table='_default'):
-    return db.table(table).remove(doc_ids=[doc_id])
+cache = TTLCache(ttl=600000)
+
+
+def set(payload):
+    key = '%s%s%s' % (
+        payload['code'],
+        payload['redirect_uri'],
+        payload['client_id']
+    )
+    print('Setting key: "%s"' % key)
+    cache.set(key, payload)
+
+
+def get(payload):
+    key = '%s%s%s' % (
+        payload['code'],
+        payload['redirect_uri'],
+        payload['client_id']
+    )
+    print('Searching key: "%s"' % key)
+    return cache.get(key)

@@ -1,8 +1,9 @@
 from urllib.parse import urlencode
-from pecan import expose, redirect, abort, request, response
+from datetime import datetime
+from pecan import expose, redirect, abort, request, response, conf
 from .. import storage
 
-
+import jwt
 import uuid
 
 
@@ -59,14 +60,13 @@ class AuthorizationController:
 
         # verify auth code, if it is provided
         if code is not None:
-            found_code = storage.find(
-                table='auth_codes',
+            found_code = storage.get(dict(
                 code=code,
                 redirect_uri=redirect_uri,
                 client_id=client_id
-            )
-            if len(found_code):
-                data = {'me': found_code[0]['me']}
+            ))
+            if found_code is not None:
+                data = {'me': found_code['me']}
                 return data
             abort(401, 'Invalid auth code.')
 
@@ -76,18 +76,15 @@ class AuthorizationController:
             code = str(uuid.uuid4())
 
             # store code in our storage
-            storage.store(
-                dict(
-                    me=me,
-                    client_id=client_id,
-                    redirect_uri=redirect_uri,
-                    state=state,
-                    response_type=response_type,
-                    scope=scope,
-                    code=code
-                ),
-                table='auth_codes'
-            )
+            storage.set(dict(
+                me=me,
+                client_id=client_id,
+                redirect_uri=redirect_uri,
+                state=state,
+                response_type=response_type,
+                scope=scope,
+                code=code
+            ))
 
             # redirect to the requesting application
             values = urlencode({'code': code, 'state': state})
@@ -116,15 +113,20 @@ class TokenController:
             'Authorization', 'Bearer XYZ'
         ).split(' ')[1]
 
-        # look up the token in the database
-        found_token = storage.find(
-            table='tokens',
-            access_token=token
-        )
-        if len(found_token):
-            return found_token[0]
-
-        abort(403, 'Invalid token.')
+        # validate token
+        try:
+            payload = jwt.decode(
+                token,
+                conf.token.secret,
+                algorithms=[conf.token.algorithm]
+            )
+            return {
+                'me': payload['me'],
+                'client_id': payload['client_id'],
+                'scope': payload['scope']
+            }
+        except:
+            abort(403, 'Invalid token.')
 
     @index.when(method='POST')
     @expose('json')
@@ -140,29 +142,29 @@ class TokenController:
         '''
 
         # look for a matching authorization code
-        found_code = storage.find(
-            table='auth_codes',
+        found_code = storage.get(dict(
             code=code,
-            me=me,
             redirect_uri=redirect_uri,
             client_id=client_id
-        )
+        ))
 
         # if we found one, generate and store a token
-        if len(found_code):
+        if found_code is not None and found_code['me'] == me:
             # generate a token
-            token = str(uuid.uuid4())
+            token = jwt.encode({
+                'me': me,
+                'client_id': client_id,
+                'scope': found_code['scope'],
+                'date_issued': str(datetime.utcnow()),
+                'nonce': str(uuid.uuid4())
+            }, conf.token.secret, conf.token.algorithm).decode('utf-8')
 
-            # store the token in our database
+            # construct the return payload
             data = {
-                'me': found_code[0]['me'],
-                'scope': found_code[0]['scope'],
+                'me': found_code['me'],
+                'scope': found_code['scope'],
                 'access_token': token
             }
-            storage.store(data, table='tokens')
-
-            # remove the now used auth code
-            storage.delete(found_code[0].doc_id, table='auth_codes')
 
             return data
 
@@ -171,6 +173,5 @@ class TokenController:
 
 
 class IndieAuthController:
-
     auth = AuthorizationController()
     token = TokenController()

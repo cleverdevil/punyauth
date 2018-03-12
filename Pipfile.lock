@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "0a58836b06a7d48074a44ea7db5c91ec79c128f132de5008e579bfb46cd48f27"
+            "sha256": "bf6ec689e6d676a97fdf9b0683489a0c28338506c5054a50a4675637f421a527"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -60,6 +60,13 @@
             ],
             "version": "==1.3.2"
         },
+        "pyjwt": {
+            "hashes": [
+                "sha256:b752500cafd4df9f0dc6efe9063603e36a4e1a5c24fee48234d2949b6606aa59",
+                "sha256:9c3016e4a292151c5396e25cc0c28c4e1cdf13fa19118eb84f500f9670e3f628"
+            ],
+            "version": "==1.6.0"
+        },
         "six": {
             "hashes": [
                 "sha256:832dc0e10feb1aa2c68dcc57dbb658f1c7e65b9b61af69048abc87a2db00a0eb",
@@ -83,10 +90,10 @@
         },
         "webob": {
             "hashes": [
-                "sha256:6cbd4aa5a0d37090f3d2bece656186d4691297ffbf39d08a6bbf55f189810f67",
-                "sha256:fa192842af2a04be36e3c4b4fc85e48fbaada5c462443b20dc3327d33d76ffe8"
+                "sha256:63f4220492476c5c716b615baed7bf3d27040b3105014375787160dee0943115",
+                "sha256:8d10af182fda4b92193113ee1edeb687ab9dc44336b37d6804e413f0240d40d9"
             ],
-            "version": "==1.8.0rc1"
+            "version": "==1.7.4"
         },
         "webtest": {
             "hashes": [
