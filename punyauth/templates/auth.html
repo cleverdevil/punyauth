@@ -1,0 +1,37 @@
+<%inherit file="layout.html" />
+
+## provide definitions for blocks we want to redefine
+<%def name="title()">
+    Authorization Request
+</%def>
+
+## now define the body of the template
+    <header>
+      <h1>Authorization Request: </h1>
+    </header>
+
+    <div id="content">
+      <p>
+        The app <pre>${client_id}</pre> is requesting the following scopes:
+      </p>
+
+      <ul class="scopes">
+        % for scope_name in scope.split():
+        <li>${scope_name}</li>
+        % endfor
+      </ul>
+
+      <form method="POST" action="/indieauth/auth">
+        <input type="hidden" name="me" value="${me}">
+        <input type="hidden" name="client_id" value="${client_id}">
+        <input type="hidden" name="redirect_uri" value="${redirect_uri}">
+        <input type="hidden" name="response_type" value="${response_type}">
+        <input type="hidden" name="scope" value="${scope}">
+        
+        % if state is not None:
+        <input type="hidden" name="state" value="${state}">
+        % endif
+        
+        <input type="submit" name="approve" value="Approve"> 
+      </form>
+    </div>
