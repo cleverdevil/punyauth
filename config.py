@@ -19,8 +19,9 @@ token = {
     'secret': '3598ECD3-6FBE-443A-B8E3-8D5E548F0608'
 }
 
-db = {
-    'path': '%(confdir)s/db'
+passwords = {
+    'path': '%(confdir)s/etc/passwords.json',
+    'salt': '82E4D540'
 }
 
 logging = {

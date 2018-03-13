@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "bf6ec689e6d676a97fdf9b0683489a0c28338506c5054a50a4675637f421a527"
+            "sha256": "245b83f271d731aeff6b1530db97e2de83dd9560a8efba12bde82ba6f6627052"
         },
         "host-environment-markers": {
             "implementation_name": "cpython",
@@ -74,13 +74,6 @@
             ],
             "version": "==1.11.0"
         },
-        "tinydb": {
-            "hashes": [
-                "sha256:1c746c7dc8125412d70ca157e86e9230afff4ce2c0bd609197a647d933007f43",
-                "sha256:96bd60c51a34d7844b89197d7f19a855e249635a4e23dbcf5b892a10e301c032"
-            ],
-            "version": "==3.8.0"
-        },
         "waitress": {
             "hashes": [
                 "sha256:40b0f297a7f3af61fbfbdc67e59090c70dc150a1601c39ecc9f5f1d283fb931b",
@@ -90,10 +83,10 @@
         },
         "webob": {
             "hashes": [
-                "sha256:63f4220492476c5c716b615baed7bf3d27040b3105014375787160dee0943115",
-                "sha256:8d10af182fda4b92193113ee1edeb687ab9dc44336b37d6804e413f0240d40d9"
+                "sha256:6cbd4aa5a0d37090f3d2bece656186d4691297ffbf39d08a6bbf55f189810f67",
+                "sha256:fa192842af2a04be36e3c4b4fc85e48fbaada5c462443b20dc3327d33d76ffe8"
             ],
-            "version": "==1.7.4"
+            "version": "==1.8.0rc1"
         },
         "webtest": {
             "hashes": [

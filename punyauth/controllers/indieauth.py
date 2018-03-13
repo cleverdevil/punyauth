@@ -3,8 +3,18 @@ from datetime import datetime
 from pecan import expose, redirect, abort, request, response, conf
 from .. import storage
 
+import json
 import jwt
 import uuid
+import hashlib
+
+
+def verify_password(me, password):
+    passwords = json.loads(open(conf.passwords.path, 'r').read())
+    pass_hash = hashlib.sha256(
+        (password + conf.passwords.salt).encode('utf-8')
+    ).hexdigest()
+    return pass_hash == passwords.get(me)
 
 
 class AuthorizationController:
@@ -45,16 +55,16 @@ class AuthorizationController:
     @expose(content_type='application/x-www-form-urlencoded', template='urlencode.html')
     def index_post(self, me=None, client_id=None, redirect_uri=None,
                 state=None, response_type='id', scope=None,
-                approve=None, code=None):
+                approve=None, code=None, password=None):
         '''
-        If a `code` is passed into this endpoint, then we are to validate
-        that authorization code against our database with the `redirect_uri`
-        and `client_id` parameters. If we find a match, we are to return
-        the `me` URL that is associated with the authorization code.
+        If a `code` is passed into this endpoint, then we are to validate that
+        authorization code against our cache with the `redirect_uri` and
+        `client_id` parameters. If we find a match, we are to return the `me`
+        URL that is associated with the authorization code.
 
         If a `code` is not passed into this endpoint, but `approve` is passed
-        along as "Approve," then we generate an authorization token, and
-        store it in our database, before finally redirecting to the provided
+        along as "Approve," then we generate an authorization token, and store
+        it in our cache, before finally redirecting to the provided
         `redirect_uri`, passing along the `code` and `state`.
         '''
 
@@ -72,6 +82,10 @@ class AuthorizationController:
 
         # otherwise approve request for auth code
         if approve == 'Approve':
+            # verify password
+            if not verify_password(me, password):
+                abort(403, 'Invalid password.')
+
             # generate auth code
             code = str(uuid.uuid4())
 
@@ -120,6 +134,10 @@ class TokenController:
                 conf.token.secret,
                 algorithms=[conf.token.algorithm]
             )
+            if payload['response_type'] != 'code':
+                response.status = 400
+                return { 'error': 'invalid_grant' }
+
             return {
                 'me': payload['me'],
                 'client_id': payload['client_id'],
