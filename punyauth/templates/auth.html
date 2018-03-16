@@ -1,3 +1,7 @@
+<%
+from pecan import conf
+%>
+
 <%inherit file="layout.html" />
 
 ## provide definitions for blocks we want to redefine
@@ -21,7 +25,7 @@
         % endfor
       </ul>
 
-      <form method="POST" action="/indieauth/auth">
+      <form method="POST" action="${conf.app.base}/indieauth/auth">
         <input type="hidden" name="me" value="${me}">
         <input type="hidden" name="client_id" value="${client_id}">
         <input type="hidden" name="redirect_uri" value="${redirect_uri}">

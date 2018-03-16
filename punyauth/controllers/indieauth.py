@@ -9,12 +9,20 @@ import uuid
 import hashlib
 
 
+def normalize_me(me):
+    if me.endswith('/'):
+        return me
+    return me + '/'
+
+
 def verify_password(me, password):
+    me = normalize_me(me)
     passwords = json.loads(open(conf.passwords.path, 'r').read())
     pass_hash = hashlib.sha256(
         (password + conf.passwords.salt).encode('utf-8')
     ).hexdigest()
-    return pass_hash == passwords.get(me)
+    found_pass = passwords.get(me)
+    return pass_hash == found_pass
 
 
 class AuthorizationController:
@@ -40,6 +48,8 @@ class AuthorizationController:
         then it will pass `response_type` as "id." If the application wants
         full authorization, then it will pass `response_type` as "code."
         '''
+
+        me = normalize_me(me)
 
         return dict(
             me=me,
@@ -68,6 +78,8 @@ class AuthorizationController:
         `redirect_uri`, passing along the `code` and `state`.
         '''
 
+        me = normalize_me(me)
+
         # verify auth code, if it is provided
         if code is not None:
             found_code = storage.get(dict(
@@ -76,7 +88,7 @@ class AuthorizationController:
                 client_id=client_id
             ))
             if found_code is not None:
-                data = {'me': found_code['me']}
+                data = {'me': normalize_me(found_code['me'])}
                 return data
             abort(401, 'Invalid auth code.')
 
@@ -134,12 +146,12 @@ class TokenController:
                 conf.token.secret,
                 algorithms=[conf.token.algorithm]
             )
-            if payload['response_type'] != 'code':
+            if payload.get('response_type') == 'id':
                 response.status = 400
                 return { 'error': 'invalid_grant' }
 
             return {
-                'me': payload['me'],
+                'me': normalize_me(payload['me']),
                 'client_id': payload['client_id'],
                 'scope': payload['scope']
             }
@@ -167,7 +179,8 @@ class TokenController:
         ))
 
         # if we found one, generate and store a token
-        if found_code is not None and found_code['me'] == me:
+        me = normalize_me(me)
+        if found_code is not None and normalize_me(found_code['me']) == me:
             # generate a token
             token = jwt.encode({
                 'me': me,
@@ -179,7 +192,7 @@ class TokenController:
 
             # construct the return payload
             data = {
-                'me': found_code['me'],
+                'me': normalize_me(found_code['me']),
                 'scope': found_code['scope'],
                 'access_token': token
             }
