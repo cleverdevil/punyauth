@@ -12,6 +12,7 @@ import hashlib
 def normalize_me(me):
     if me.endswith('/'):
         return me
+
     return me + '/'
 
 
@@ -31,8 +32,15 @@ class AuthorizationController:
     '''
 
     @expose(template='auth.html', generic=True)
-    def index(self, me, client_id, redirect_uri,
-              state=None, response_type='id', scope='create'):
+    def index(
+        self,
+        me,
+        client_id,
+        redirect_uri,
+        state=None,
+        response_type='id',
+        scope='create',
+    ):
         '''
         HTTP GET /indieauth/auth
 
@@ -57,15 +65,24 @@ class AuthorizationController:
             redirect_uri=redirect_uri,
             state=state,
             response_type=response_type,
-            scope=scope
+            scope=scope,
         )
 
     @index.when(method='POST')
     @expose('json')
     @expose(content_type='application/x-www-form-urlencoded', template='urlencode.html')
-    def index_post(self, me=None, client_id=None, redirect_uri=None,
-                state=None, response_type='id', scope=None,
-                approve=None, code=None, password=None):
+    def index_post(
+        self,
+        me=None,
+        client_id=None,
+        redirect_uri=None,
+        state=None,
+        response_type='id',
+        scope=None,
+        approve=None,
+        code=None,
+        password=None,
+    ):
         '''
         If a `code` is passed into this endpoint, then we are to validate that
         authorization code against our cache with the `redirect_uri` and
@@ -82,14 +99,13 @@ class AuthorizationController:
 
         # verify auth code, if it is provided
         if code is not None:
-            found_code = storage.get(dict(
-                code=code,
-                redirect_uri=redirect_uri,
-                client_id=client_id
-            ))
+            found_code = storage.get(
+                dict(code=code, redirect_uri=redirect_uri, client_id=client_id)
+            )
             if found_code is not None:
                 data = {'me': normalize_me(found_code['me'])}
                 return data
+
             abort(401, 'Invalid auth code.')
 
         # otherwise approve request for auth code
@@ -102,15 +118,17 @@ class AuthorizationController:
             code = str(uuid.uuid4())
 
             # store code in our storage
-            storage.set(dict(
-                me=me,
-                client_id=client_id,
-                redirect_uri=redirect_uri,
-                state=state,
-                response_type=response_type,
-                scope=scope,
-                code=code
-            ))
+            storage.set(
+                dict(
+                    me=me,
+                    client_id=client_id,
+                    redirect_uri=redirect_uri,
+                    state=state,
+                    response_type=response_type,
+                    scope=scope,
+                    code=code,
+                )
+            )
 
             # redirect to the requesting application
             values = urlencode({'code': code, 'state': state})
@@ -135,26 +153,23 @@ class TokenController:
         '''
 
         # pull the token off the Authorization header
-        token = request.headers.get(
-            'Authorization', 'Bearer XYZ'
-        ).split(' ')[1]
+        token = request.headers.get('Authorization', 'Bearer XYZ').split(' ')[1]
 
         # validate token
         try:
             payload = jwt.decode(
-                token,
-                conf.token.secret,
-                algorithms=[conf.token.algorithm]
+                token, conf.token.secret, algorithms=[conf.token.algorithm]
             )
             if payload.get('response_type') == 'id':
                 response.status = 400
-                return { 'error': 'invalid_grant' }
+                return {'error': 'invalid_grant'}
 
             return {
                 'me': normalize_me(payload['me']),
                 'client_id': payload['client_id'],
-                'scope': payload['scope']
+                'scope': payload['scope'],
             }
+
         except:
             abort(403, 'Invalid token.')
 
@@ -172,29 +187,33 @@ class TokenController:
         '''
 
         # look for a matching authorization code
-        found_code = storage.get(dict(
-            code=code,
-            redirect_uri=redirect_uri,
-            client_id=client_id
-        ))
+        found_code = storage.get(
+            dict(code=code, redirect_uri=redirect_uri, client_id=client_id)
+        )
 
         # if we found one, generate and store a token
         me = normalize_me(me)
         if found_code is not None and normalize_me(found_code['me']) == me:
             # generate a token
-            token = jwt.encode({
-                'me': me,
-                'client_id': client_id,
-                'scope': found_code['scope'],
-                'date_issued': str(datetime.utcnow()),
-                'nonce': str(uuid.uuid4())
-            }, conf.token.secret, conf.token.algorithm).decode('utf-8')
+            token = jwt.encode(
+                {
+                    'me': me,
+                    'client_id': client_id,
+                    'scope': found_code['scope'],
+                    'date_issued': str(datetime.utcnow()),
+                    'nonce': str(uuid.uuid4()),
+                },
+                conf.token.secret,
+                conf.token.algorithm,
+            ).decode(
+                'utf-8'
+            )
 
             # construct the return payload
             data = {
                 'me': normalize_me(found_code['me']),
                 'scope': found_code['scope'],
-                'access_token': token
+                'access_token': token,
             }
 
             return data

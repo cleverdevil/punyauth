@@ -7,9 +7,7 @@ setup(
     description='',
     author='',
     author_email='',
-    install_requires=[
-        "pecan",
-    ],
+    install_requires=["pecan"],
     test_suite='punyauth',
     zip_safe=False,
     include_package_data=True,
@@ -17,5 +15,5 @@ setup(
     entry_points="""
     [pecan.command]
     hashpass=punyauth.cmds:GeneratePasswordHash
-    """
+    """,
 )
